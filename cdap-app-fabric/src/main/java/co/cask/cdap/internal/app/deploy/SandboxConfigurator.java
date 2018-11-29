@@ -18,15 +18,16 @@ package co.cask.cdap.internal.app.deploy;
 
 import co.cask.cdap.app.deploy.ConfigResponse;
 import co.cask.cdap.app.deploy.Configurator;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import com.google.common.io.Files;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.stream.Collectors;
 
 /**
  * SandboxConfigurator spawns a seperate JVM to run configuration of an Application.
@@ -140,7 +141,8 @@ public final class SandboxConfigurator implements Configurator {
           process.waitFor();
           int exit = process.exitValue();
           if (exit == 0) {
-            result.set(new DefaultConfigResponse(0, Files.newReaderSupplier(outputFile, Charsets.UTF_8)));
+            result.set(new DefaultConfigResponse(0, Files.lines(outputFile.toPath(),
+                                                                StandardCharsets.UTF_8).collect(Collectors.joining())));
           } else {
             result.set(new DefaultConfigResponse(exit, null));
           }

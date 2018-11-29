@@ -112,7 +112,7 @@ public class LocalArtifactLoaderStage extends AbstractStage<AppDeploymentInfo> {
     if (response.getExitCode() != 0) {
       throw new IllegalArgumentException("Failed to configure application: " + deploymentInfo);
     }
-    ApplicationSpecification specification = adapter.fromJson(response.get());
+    ApplicationSpecification specification = adapter.fromJson(response.getResponse());
     ApplicationId applicationId;
     if (appVersion == null) {
       applicationId = deploymentInfo.getNamespaceId().app(specification.getName());

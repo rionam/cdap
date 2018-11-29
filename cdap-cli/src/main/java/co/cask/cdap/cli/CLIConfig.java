@@ -36,9 +36,8 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
-import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
-import com.google.common.io.InputSupplier;
+import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import jline.TerminalFactory;
@@ -47,8 +46,9 @@ import jline.console.ConsoleReader;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 import javax.annotation.Nullable;
@@ -296,13 +296,12 @@ public class CLIConfig implements TableRendererConfig {
 
   private String tryGetVersion() {
     try {
-      InputSupplier<? extends InputStream> versionFileSupplier = new InputSupplier<InputStream>() {
-        @Override
-        public InputStream getInput() throws IOException {
-          return VersionCommand.class.getClassLoader().getResourceAsStream("VERSION");
-        }
-      };
-      return CharStreams.toString(CharStreams.newReaderSupplier(versionFileSupplier, Charsets.UTF_8));
+      URL version = VersionCommand.class.getClassLoader().getResource("VERSION");
+      if (version == null) {
+        // This shouldn't happen
+        throw new IllegalStateException("VERSION file not found");
+      }
+      return Resources.toString(version, StandardCharsets.UTF_8);
     } catch (IOException e) {
       throw Throwables.propagate(e);
     }
