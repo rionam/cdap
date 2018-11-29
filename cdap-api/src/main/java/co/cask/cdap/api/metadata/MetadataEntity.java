@@ -335,8 +335,7 @@ public class MetadataEntity implements Iterable<MetadataEntity.KeyValue> {
           builder.append(keyValue.getValue());
           builder.append(",");
         }
-        // delete the last , and space
-        builder.deleteCharAt(builder.length() - 1);
+        // delete the last ,
         builder.deleteCharAt(builder.length() - 1);
         builder.append(String.format(" of type '%s'", getType()));
         return builder.toString();
