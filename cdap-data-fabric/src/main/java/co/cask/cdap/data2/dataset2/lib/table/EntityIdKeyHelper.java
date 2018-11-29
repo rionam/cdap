@@ -43,7 +43,7 @@ import java.util.Map;
 // Note: these methods were refactored from MetadataDataset class. Once CDAP-3657 is fixed, these methods will need
 // to be cleaned up CDAP-4291
 public final class EntityIdKeyHelper {
-  public static final Map<Class<? extends NamespacedEntityId>, String> TYPE_MAP =
+  private static final Map<Class<? extends NamespacedEntityId>, String> TYPE_MAP =
     ImmutableMap.<Class<? extends NamespacedEntityId>, String>builder()
       .put(NamespaceId.class, EntityTypeSimpleName.NAMESPACE.getSerializedForm())
       .put(ArtifactId.class, EntityTypeSimpleName.ARTIFACT.getSerializedForm())
@@ -179,7 +179,8 @@ public final class EntityIdKeyHelper {
   public static String getV1TargetType(NamespacedEntityId namespacedEntityId) {
     String v1Type = TYPE_MAP.get(namespacedEntityId.getClass());
     switch (v1Type) {
-      case MetadataEntity.VIEW:
+      // TODO (CDAP-14584) remove stream and view
+      case "stream_view":
         v1Type = "view";
         break;
       case MetadataEntity.DATASET:

@@ -60,8 +60,8 @@ public class StreamViewId extends NamespacedEntityId implements ParentedId<Strea
 
   @Override
   public MetadataEntity toMetadataEntity() {
-    return MetadataEntity.builder().append(MetadataEntity.NAMESPACE, namespace).append(MetadataEntity.STREAM, stream)
-      .appendAsType(MetadataEntity.VIEW, view)
+    return MetadataEntity.builder().append(MetadataEntity.NAMESPACE, namespace).append("stream", stream)
+      .appendAsType("view", view)
       .build();
   }
 
