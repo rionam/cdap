@@ -53,6 +53,7 @@ public final class EntityIdKeyHelper {
       .put(FlowId.class, EntityTypeSimpleName.PROGRAM.getSerializedForm())
       .put(ServiceId.class, EntityTypeSimpleName.PROGRAM.getSerializedForm())
       .put(DatasetId.class, EntityTypeSimpleName.DATASET.getSerializedForm())
+      // TODO (CDAP-14584) remove stream and view
       .put(StreamId.class, EntityTypeSimpleName.STREAM.getSerializedForm())
       .put(StreamViewId.class, EntityTypeSimpleName.VIEW.getSerializedForm())
       .put(ScheduleId.class, EntityTypeSimpleName.SCHEDULE.getSerializedForm())
@@ -86,12 +87,14 @@ public final class EntityIdKeyHelper {
       builder.add(namespaceId);
       builder.add(datasetId);
     } else if (type.equals(TYPE_MAP.get(StreamId.class))) {
+      // TODO (CDAP-14584) remove stream and view
       StreamId stream = (StreamId) namespacedEntityId;
       String namespaceId = stream.getNamespace();
       String streamId = stream.getStream();
       builder.add(namespaceId);
       builder.add(streamId);
     } else if (type.equals(TYPE_MAP.get(StreamViewId.class))) {
+      // TODO (CDAP-14584) remove stream and view
       StreamViewId view = (StreamViewId) namespacedEntityId;
       String namespaceId = view.getNamespace();
       String streamId = view.getStream();
@@ -146,6 +149,7 @@ public final class EntityIdKeyHelper {
       String namespaceId = keySplitter.getString();
       String instanceId  = keySplitter.getString();
       return new DatasetId(namespaceId, instanceId);
+      // TODO (CDAP-14584) remove stream and view
     } else if (type.equals(TYPE_MAP.get(StreamId.class))) {
       String namespaceId = keySplitter.getString();
       String instanceId  = keySplitter.getString();

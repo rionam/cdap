@@ -59,9 +59,14 @@ public final class MdsKey {
       case APPLICATION:
       case DATASET:
       case "datasetinstance":
+      // TODO (CDAP-14584) remove stream and view
+      case "stream":
         keySplitter.skipString();
         keySplitter.skipString();
         break;
+      // TODO (CDAP-14584) remove stream and view
+      case "stream_view":
+      case "view":
       case ARTIFACT:
         keySplitter.skipString();
         keySplitter.skipString();
