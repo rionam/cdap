@@ -1,5 +1,5 @@
 /*
- * Copyright © 2015 Cask Data, Inc.
+ * Copyright © 2015-2018 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,7 +16,6 @@
 
 package co.cask.cdap.common.lang.jar;
 
-import co.cask.cdap.common.io.Locations;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.io.CharStreams;
@@ -30,8 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -84,19 +83,20 @@ public class BundleJarUtilTest {
 
   private void testNumFiles(int numFiles, boolean isFile) throws IOException {
     File input = isFile ? File.createTempFile("abcd", "txt", TEMP_FOLDER.newFolder()) : TEMP_FOLDER.newFolder();
-    List<File> files = new ArrayList<>();
+    Set<String> files = new HashSet<>();
     if (!isFile) {
       for (int i = 0; i < numFiles; i++) {
-        files.add(File.createTempFile("abcd", "txt", input));
+        files.add(File.createTempFile("abcd", ".txt", input).getName());
       }
     } else {
-      files.add(input);
+      files.add(input.getName());
     }
 
     File destArchive = new File(TEMP_FOLDER.newFolder(), "myBundle.jar");
     BundleJarUtil.createJar(input, destArchive);
-    for (File file : files) {
-      BundleJarUtil.getEntry(Locations.toLocation(destArchive), file.getName()).getInput().close();
+
+    try (JarFile jarFile = new JarFile(destArchive)) {
+      Assert.assertTrue(jarFile.stream().map(JarEntry::getName).allMatch(files::contains));
     }
   }
 }

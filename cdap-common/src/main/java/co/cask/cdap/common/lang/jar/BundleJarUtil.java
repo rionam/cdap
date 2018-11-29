@@ -1,5 +1,5 @@
 /*
- * Copyright © 2014 Cask Data, Inc.
+ * Copyright © 2014-2018 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -18,14 +18,12 @@ package co.cask.cdap.common.lang.jar;
 
 import co.cask.cdap.common.io.Locations;
 import com.google.common.base.Preconditions;
-import com.google.common.io.Closeables;
 import com.google.common.io.InputSupplier;
 import org.apache.twill.filesystem.Location;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -100,64 +98,6 @@ public class BundleJarUtil {
       }
     }
     return null;
-  }
-
-  /**
-   * Returns an {@link InputSupplier} for a given entry. This avoids unjar the whole file to just get one entry.
-   * However, to get many entries, unjar would be more efficient. Also, the jar file is scanned every time the
-   * {@link InputSupplier#getInput()} is invoked.
-   *
-   * @param jarLocation Location of the jar file.
-   * @param entryName Name of the entry to fetch
-   * @return An {@link InputSupplier}.
-   */
-  public static InputSupplier<InputStream> getEntry(final Location jarLocation,
-                                                    final String entryName) throws IOException {
-    Preconditions.checkArgument(jarLocation != null);
-    Preconditions.checkArgument(entryName != null);
-    final URI uri = jarLocation.toURI();
-
-    // Small optimization if the location is local
-    if ("file".equals(uri.getScheme())) {
-      return new InputSupplier<InputStream>() {
-
-        @Override
-        public InputStream getInput() throws IOException {
-          final JarFile jarFile = new JarFile(new File(uri));
-          ZipEntry entry = jarFile.getEntry(entryName);
-          if (entry == null) {
-            throw new IOException("Entry not found for " + entryName);
-          }
-          return new FilterInputStream(jarFile.getInputStream(entry)) {
-            @Override
-            public void close() throws IOException {
-              try {
-                super.close();
-              } finally {
-                jarFile.close();
-              }
-            }
-          };
-        }
-      };
-    }
-
-    // Otherwise, use JarInputStream
-    return new InputSupplier<InputStream>() {
-      @Override
-      public InputStream getInput() throws IOException {
-        JarInputStream is = new JarInputStream(jarLocation.getInputStream());
-        JarEntry entry = is.getNextJarEntry();
-        while (entry != null) {
-          if (entryName.equals(entry.getName())) {
-            return is;
-          }
-          entry = is.getNextJarEntry();
-        }
-        Closeables.closeQuietly(is);
-        throw new IOException("Entry not found for " + entryName);
-      }
-    };
   }
 
   /**
