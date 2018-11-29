@@ -17,12 +17,12 @@
 package co.cask.cdap.common.lang.jar;
 
 import co.cask.cdap.common.io.Locations;
-import com.google.common.base.Preconditions;
 import com.google.common.io.InputSupplier;
 import org.apache.twill.filesystem.Location;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -173,37 +173,35 @@ public class BundleJarUtil {
    * @throws IOException If failed to expand the jar
    */
   public static File unJar(Location jarLocation, File destinationFolder) throws IOException {
-    Preconditions.checkArgument(jarLocation != null);
-    return unJar(Locations.newInputSupplier(jarLocation), destinationFolder);
+    try (ZipInputStream zipIn = new ZipInputStream(jarLocation.getInputStream())) {
+      unJar(zipIn, destinationFolder);
+    }
+    return destinationFolder;
   }
 
   /**
-   * Unpack a jar source to a directory.
+   * Unpack a jar file to a directory.
    *
-   * @param inputSupplier Supplier for the jar source
+   * @param jarFile the jar file to unpack
    * @param destinationFolder Directory to expand into
    * @return The {@code destinationFolder}
    * @throws IOException If failed to expand the jar
    */
-  public static File unJar(InputSupplier<? extends InputStream> inputSupplier,
-                           File destinationFolder) throws IOException {
-    Preconditions.checkArgument(inputSupplier != null);
-    Preconditions.checkArgument(destinationFolder != null);
-
-    Path destinationPath = destinationFolder.toPath();
-    Files.createDirectories(destinationPath);
-
-    try (ZipInputStream input = new ZipInputStream(inputSupplier.getInput())) {
-      unJar(input, destinationPath);
-      return destinationPath.toFile();
+  public static File unJar(File jarFile, File destinationFolder) throws IOException {
+    try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(jarFile))) {
+      unJar(zipIn, destinationFolder);
     }
+    return destinationFolder;
   }
 
 
-  private static void unJar(ZipInputStream input, Path targetDirectory) throws IOException {
+  private static void unJar(ZipInputStream input, File targetDirectory) throws IOException {
+    Path targetPath = targetDirectory.toPath();
+    Files.createDirectories(targetPath);
+
     ZipEntry entry;
     while ((entry = input.getNextEntry()) != null) {
-      Path output = targetDirectory.resolve(entry.getName());
+      Path output = targetPath.resolve(entry.getName());
 
       if (entry.isDirectory()) {
         Files.createDirectories(output);
