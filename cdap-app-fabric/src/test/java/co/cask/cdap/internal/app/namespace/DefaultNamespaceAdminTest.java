@@ -372,7 +372,7 @@ public class DefaultNamespaceAdminTest extends AppFabricTestBase {
     // Note: this is only meaningful if the user running this test is in at least 2 groups
     String[] groups = UserGroupInformation.getCurrentUser().getGroupNames();
     Assert.assertTrue(groups.length > 0);
-    String nsGroup = groups[groups.length - 1];
+    String nsGroup = groups[groups.length > 1 ? 1 : 0];
 
     // create and validate a namespace with a default settings except that a group is configured
     namespaceAdmin.create(new NamespaceMeta.Builder().setName("dd2").setGroupName(nsGroup).build());

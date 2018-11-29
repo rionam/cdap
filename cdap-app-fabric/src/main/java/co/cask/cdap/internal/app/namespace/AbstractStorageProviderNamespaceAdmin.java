@@ -167,7 +167,14 @@ abstract class AbstractStorageProviderNamespaceAdmin implements StorageProviderN
         }
         // if this is still null at this point, then the directory will have whatever HDFS assigned at creation
         if (groupToSet != null) {
-          namespaceHome.setGroup(groupToSet);
+          try {
+            namespaceHome.setGroup(groupToSet);
+          } catch (Exception e) {
+            // the exception from the file system typically does not include the group and user, so add that here
+            throw new IOException(String.format("Failed to set group '%s' for %s with current user '%s'",
+                                                groupToSet, namespaceHome,
+                                                UserGroupInformation.getCurrentUser().getUserName()), e);
+          }
         }
       }
       // create all the directories with default permissions
