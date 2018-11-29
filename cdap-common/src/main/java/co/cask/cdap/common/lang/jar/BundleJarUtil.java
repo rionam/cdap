@@ -20,11 +20,9 @@ import co.cask.cdap.common.io.Locations;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Closeables;
 import com.google.common.io.InputSupplier;
-import com.google.common.io.OutputSupplier;
 import org.apache.twill.filesystem.Location;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilterInputStream;
@@ -164,29 +162,11 @@ public class BundleJarUtil {
 
   /**
    * Creates an JAR including all the files present in the given input. Same as calling
-   * {@link #createArchive(File, OutputSupplier)} with a {@link JarOutputStream} created in the {@link OutputSupplier}.
+   * {@link #addToArchive(File, ZipOutputStream)} with a {@link JarOutputStream}.
    */
-  public static void createJar(File input, final File output) throws IOException {
-    createArchive(input, new OutputSupplier<JarOutputStream>() {
-      @Override
-      public JarOutputStream getOutput() throws IOException {
-        return new JarOutputStream(new BufferedOutputStream(new FileOutputStream(output)));
-      }
-    });
-  }
-
-  /**
-   * Creates an archive including all the files present in the given input. If the given input is a file, then it alone
-   * is included in the archive.
-   *
-   * @param input input directory (or file) whose contents needs to be archived
-   * @param outputSupplier An {@link OutputSupplier} for the archive content to be written to.
-   * @throws IOException if there is failure in the archive creation
-   */
-  public static void createArchive(File input,
-                                   OutputSupplier<? extends ZipOutputStream> outputSupplier) throws IOException {
-    try (ZipOutputStream output = outputSupplier.getOutput()) {
-      addToArchive(input, output);
+  public static void createJar(File input, File output) throws IOException {
+    try (JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(output))) {
+      addToArchive(input, jarOut);
     }
   }
 
@@ -198,7 +178,7 @@ public class BundleJarUtil {
    * @param output an opened {@link ZipOutputStream} for the archive content to add to
    * @throws IOException if there is failure in the archive creation
    */
-  public static void addToArchive(File input, final ZipOutputStream output) throws IOException {
+  public static void addToArchive(File input, ZipOutputStream output) throws IOException {
     addToArchive(input, false, output);
   }
 

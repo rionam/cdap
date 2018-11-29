@@ -21,14 +21,12 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
-import com.google.common.io.OutputSupplier;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -36,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
 
 /**
  * Unit Tests for {@link BundleJarUtil}.
@@ -74,13 +71,7 @@ public class BundleJarUtilTest {
 
     // Create a jar of the top level directory
     final File target = new File(TEMP_FOLDER.newFolder(), "target.jar");
-    BundleJarUtil.createArchive(dir, new OutputSupplier<JarOutputStream>() {
-      @Override
-      public JarOutputStream getOutput() throws IOException {
-        return new JarOutputStream(new FileOutputStream(target));
-      }
-    });
-
+    BundleJarUtil.createJar(dir, target);
     JarFile jarFile = new JarFile(target);
     Assert.assertTrue(jarFile.getJarEntry("subdir/").isDirectory());
 
