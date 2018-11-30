@@ -186,6 +186,7 @@ public class LineageHttpHandlerTestRun extends MetadataTestBase {
       // Test non-existent run
       assertRunMetadataNotFound(flow.run(RunIds.generate(1000).getId()));
     } finally {
+      removeMetadata(stream);
       namespaceClient.delete(namespace);
     }
   }
