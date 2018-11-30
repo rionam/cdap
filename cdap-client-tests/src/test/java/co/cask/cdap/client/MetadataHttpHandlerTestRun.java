@@ -912,7 +912,6 @@ public class MetadataHttpHandlerTestRun extends MetadataTestBase {
       expected.put(app2Id.toMetadataEntity(), meta);
 
       Map<MetadataEntity, Metadata> actual = new HashMap<>();
-      Assert.assertEquals(2, results.getResults().size());
       for (MetadataSearchResultRecordV2 record : results.getResults()) {
         actual.put(record.getMetadataEntity(), record.getMetadata().get(MetadataScope.USER));
       }
