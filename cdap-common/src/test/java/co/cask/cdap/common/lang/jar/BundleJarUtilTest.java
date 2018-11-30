@@ -29,6 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -41,6 +43,14 @@ public class BundleJarUtilTest {
 
   @ClassRule
   public static final TemporaryFolder TEMP_FOLDER = new TemporaryFolder();
+
+  @Test
+  public void test() throws Exception {
+    URL url = new URL("https://repo.maven.apache.org/maven2/org/apache/twill/twill-api/0.13.0/twill-api-0.13.0.jar");
+    ClassLoader cl = new URLClassLoader(new URL[] { url }, null);
+    URL resource = cl.getResource("org/apache/twill/api/TwillContext.class");
+    System.out.println(resource);
+  }
 
   @Test
   public void testPackingDir() throws IOException {

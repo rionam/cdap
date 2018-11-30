@@ -16,8 +16,6 @@
 
 package co.cask.cdap.common.lang.jar;
 
-import co.cask.cdap.common.io.Locations;
-import com.google.common.io.InputSupplier;
 import org.apache.twill.filesystem.Location;
 
 import java.io.BufferedInputStream;
@@ -25,8 +23,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -47,11 +45,10 @@ import javax.annotation.Nullable;
 /**
  * Utility functions that operate on bundle jars.
  */
-// TODO: remove this -- not sure how to refactor though
 public class BundleJarUtil {
 
   /**
-   * Load the manifest inside the given jar.
+   * Gets the {@link Manifest} inside the given jar.
    *
    * @param jarLocation Location of the jar file.
    * @return The manifest inside the jar file or {@code null} if no manifest inside the jar file.
@@ -59,45 +56,51 @@ public class BundleJarUtil {
    */
   @Nullable
   public static Manifest getManifest(Location jarLocation) throws IOException {
-    return getManifest(jarLocation.toURI(), Locations.newInputSupplier(jarLocation));
+    // Small optimization if the location is local
+    URI uri = jarLocation.toURI();
+    if ("file".equals(uri.getScheme())) {
+      return getManifest(new File(uri.getPath()));
+    }
+
+    // Otherwise search for the Manifest file
+    try (JarInputStream is = new JarInputStream(new BufferedInputStream(jarLocation.getInputStream()))) {
+      return getManifest(is);
+    }
   }
 
   /**
-   * Gets the manifest inside the jar located by the given URI.
+   * Gets the {@link Manifest} inside the given jar.
    *
-   * @param uri Location of the jar file.
-   * @param inputSupplier a {@link InputSupplier} to provide an {@link InputStream} for the given URI to read the
-   *                      jar file content.
+   * @param url the {@link URL} of the jar
    * @return The manifest inside the jar file or {@code null} if no manifest inside the jar file.
    * @throws IOException if failed to load the manifest.
    */
   @Nullable
-  public static Manifest getManifest(URI uri, InputSupplier<? extends InputStream> inputSupplier) throws IOException {
+  public static Manifest getManifest(URL url) throws IOException {
     // Small optimization if the location is local
-    if ("file".equals(uri.getScheme())) {
-      try (JarFile jarFile = new JarFile(new File(uri))) {
-        return jarFile.getManifest();
-      }
+    if ("file".equals(url.getProtocol())) {
+      return getManifest(new File(url.getPath()));
     }
 
-    // Otherwise, need to search it with JarInputStream
-    try (JarInputStream is = new JarInputStream(new BufferedInputStream(inputSupplier.getInput()))) {
-      // This only looks at the first entry, which if is created with jar util, then it'll be there.
-      Manifest manifest = is.getManifest();
-      if (manifest != null) {
-        return manifest;
-      }
-
-      // Otherwise, slow path. Need to goes through the entries
-      JarEntry jarEntry = is.getNextJarEntry();
-      while (jarEntry != null) {
-        if (JarFile.MANIFEST_NAME.equals(jarEntry.getName())) {
-          return new Manifest(is);
-        }
-        jarEntry = is.getNextJarEntry();
-      }
+    // Otherwise search for the Manifest file
+    try (JarInputStream is = new JarInputStream(new BufferedInputStream(url.openStream()))) {
+      return getManifest(is);
     }
-    return null;
+  }
+
+
+  /**
+   * Gets the {@link Manifest} inside the given jar.
+   *
+   * @param file the jar file.
+   * @return The manifest inside the jar file or {@code null} if no manifest inside the jar file.
+   * @throws IOException if failed to load the manifest.
+   */
+  @Nullable
+  public static Manifest getManifest(File file) throws IOException {
+    try (JarFile jarFile = new JarFile(file)) {
+      return jarFile.getManifest();
+    }
   }
 
   /**
@@ -173,7 +176,7 @@ public class BundleJarUtil {
    * @throws IOException If failed to expand the jar
    */
   public static File unJar(Location jarLocation, File destinationFolder) throws IOException {
-    try (ZipInputStream zipIn = new ZipInputStream(jarLocation.getInputStream())) {
+    try (ZipInputStream zipIn = new ZipInputStream(new BufferedInputStream(jarLocation.getInputStream()))) {
       unJar(zipIn, destinationFolder);
     }
     return destinationFolder;
@@ -188,12 +191,38 @@ public class BundleJarUtil {
    * @throws IOException If failed to expand the jar
    */
   public static File unJar(File jarFile, File destinationFolder) throws IOException {
-    try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(jarFile))) {
+    try (ZipInputStream zipIn = new ZipInputStream(new BufferedInputStream(new FileInputStream(jarFile)))) {
       unJar(zipIn, destinationFolder);
     }
     return destinationFolder;
   }
 
+  /**
+   * Search for {@link Manifest} from the given {@link JarInputStream}.
+   *
+   * @param jarInput the {@link JarInputStream} to look for {@link Manifest}
+   * @return The {@link Manifest} or {@code null} if no manifest was found.
+   * @throws IOException if failed to read from the given input
+   */
+  @Nullable
+  private static Manifest getManifest(JarInputStream jarInput) throws IOException {
+    // This only looks at the first entry, which if is created with jar util, then it'll be there.
+    Manifest manifest = jarInput.getManifest();
+    if (manifest != null) {
+      return manifest;
+    }
+
+    // Otherwise, slow path. Need to goes through the entries
+    JarEntry jarEntry = jarInput.getNextJarEntry();
+    while (jarEntry != null) {
+      if (JarFile.MANIFEST_NAME.equals(jarEntry.getName())) {
+        return new Manifest(jarInput);
+      }
+      jarEntry = jarInput.getNextJarEntry();
+    }
+
+    return null;
+  }
 
   private static void unJar(ZipInputStream input, File targetDirectory) throws IOException {
     Path targetPath = targetDirectory.toPath();
